@@ -2,7 +2,4 @@
 layout: home
 title: 首页
 ---
-
-欢迎来到 **{{ site.title }}**。
-
-{{ site.description }}
+这里记录写作、生活片段和慢慢成形的想法。
