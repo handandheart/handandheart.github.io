@@ -2,37 +2,98 @@
 layout: default
 ---
 
-<section class="hero">
-  <div class="hero-copy">
-    <p class="eyebrow">A personal notebook for words and days</p>
-    <h1>{{ site.title }}</h1>
-    <p class="hero-text">{{ page.content | strip_html | normalize_whitespace }}</p>
-    <div class="hero-actions">
-      <a class="button button-primary" href="{{ '/archive/' | relative_url }}">查看全部文章</a>
-      <a class="button button-secondary" href="{{ '/about/' | relative_url }}">了解这个博客</a>
-    </div>
-  </div>
-  <aside class="hero-note">
-    <p>这里适合放慢一点。</p>
-    <p>写作、观察、片段，都可以先在这里落下来。</p>
-  </aside>
+{% assign sorted_categories = site.categories | sort %}
+{% assign visible_posts = site.posts | where_exp: "post", "post.date <= site.time" %}
+
+<section class="post-filter" aria-label="文章分类过滤">
+  <button class="filter-chip is-active" type="button" data-filter="all">全部</button>
+  {% for category in sorted_categories %}
+    <button class="filter-chip" type="button" data-filter="{{ category[0] | slugify }}">{{ category[0] }}</button>
+  {% endfor %}
 </section>
 
-<section class="section-heading">
-  <div>
-    <p class="eyebrow">Latest posts</p>
-    <h2>最近更新</h2>
-  </div>
-  <a class="section-link" href="{{ '/archive/' | relative_url }}">归档</a>
-</section>
-
-<section class="post-grid">
-  {% assign visible_posts = site.posts | where_exp: "post", "post.date <= site.time" | slice: 0, 6 %}
+<section class="post-grid" data-post-grid>
   {% for post in visible_posts %}
-    <article class="post-card">
-      <p class="post-meta">{{ post.date | date: "%Y.%m.%d" }}{% if post.categories and post.categories != empty %} · {{ post.categories | first }}{% endif %}</p>
+    {% assign primary_category = post.categories | first %}
+    <article class="post-card" data-post-card data-category="{% if primary_category %}{{ primary_category | slugify }}{% else %}uncategorized{% endif %}">
+      <div class="post-card-top">
+        <p class="post-meta">{{ post.date | date: "%Y.%m.%d" }}</p>
+        {% if primary_category %}
+          <span class="post-tag">{{ primary_category }}</span>
+        {% endif %}
+      </div>
       <h3><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h3>
-      <p>{{ post.excerpt | strip_html | truncate: 110 }}</p>
     </article>
   {% endfor %}
 </section>
+
+<section class="pagination" aria-label="文章分页">
+  <button class="pagination-button" type="button" data-page-action="prev">上一页</button>
+  <p class="pagination-status" data-pagination-status>1 / 1</p>
+  <button class="pagination-button" type="button" data-page-action="next">下一页</button>
+</section>
+
+<script>
+  (() => {
+    const pageSize = 6;
+    const chips = Array.from(document.querySelectorAll("[data-filter]"));
+    const cards = Array.from(document.querySelectorAll("[data-post-card]"));
+    const status = document.querySelector("[data-pagination-status]");
+    const prevButton = document.querySelector('[data-page-action="prev"]');
+    const nextButton = document.querySelector('[data-page-action="next"]');
+
+    let activeFilter = "all";
+    let currentPage = 1;
+
+    function getFilteredCards() {
+      if (activeFilter === "all") return cards;
+      return cards.filter((card) => card.dataset.category === activeFilter);
+    }
+
+    function render() {
+      const filtered = getFilteredCards();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      currentPage = Math.min(currentPage, totalPages);
+
+      cards.forEach((card) => {
+        card.hidden = true;
+      });
+
+      const start = (currentPage - 1) * pageSize;
+      filtered.slice(start, start + pageSize).forEach((card) => {
+        card.hidden = false;
+      });
+
+      status.textContent = `${currentPage} / ${totalPages}`;
+      prevButton.disabled = currentPage === 1;
+      nextButton.disabled = currentPage === totalPages;
+    }
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        activeFilter = chip.dataset.filter;
+        currentPage = 1;
+        chips.forEach((item) => item.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        render();
+      });
+    });
+
+    prevButton.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        render();
+      }
+    });
+
+    nextButton.addEventListener("click", () => {
+      const totalPages = Math.max(1, Math.ceil(getFilteredCards().length / pageSize));
+      if (currentPage < totalPages) {
+        currentPage += 1;
+        render();
+      }
+    });
+
+    render();
+  })();
+</script>

@@ -12,14 +12,13 @@
       <header class="site-header">
         <a class="site-brand" href="{{ '/' | relative_url }}">
           <span class="site-brand-mark">H</span>
-          <span>
+          <span class="site-brand-copy">
             <strong>{{ site.title }}</strong>
-            <em>{{ site.description }}</em>
+            <em>{{ site.tagline | default: site.description }}</em>
           </span>
         </a>
         <nav class="site-nav" aria-label="主导航">
           <a href="{{ '/' | relative_url }}">首页</a>
-          <a href="{{ '/archive/' | relative_url }}">归档</a>
           <a href="{{ '/about/' | relative_url }}">关于</a>
         </nav>
       </header>
@@ -29,7 +28,6 @@
       </main>
 
       <footer class="site-footer">
-        <p>写一点能留下来的内容。</p>
         <p>{{ site.title }} · {{ "now" | date: "%Y" }}</p>
       </footer>
     </div>
